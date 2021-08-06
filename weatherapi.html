@@ -1,0 +1,117 @@
+<!-- In this exercise you will make calls to two APIs. First would be to https://api.geocod.io
+They require an API key to use their API. So, first register a free account to get the API key
+Once you get the API key, you will call the API end point https://api.geocod.io/v1.6/geocode?q={address}&api_key={key}
+The response will have the latitude and longitude information for the given address
+For the given latitude and longitude, you will call another API https://api.weather.gov/points/{latitude},{longitude}
+The response will have a forecast property with a url value like for example 
+https://api.weather.gov/gridpoints/FWD/80,106/forecast
+Make another API call to the forecast URL
+The response will have list of forecasts for a week
+
+Your task is to create a page with an input text field and a button. On entering the address and clicking the button, 
+display the forecast in a grid table -->
+
+<!-- Weather API	d1389198d165c9181c3878685910003d5186c11  -->
+
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <style>
+            .container {
+                padding: 10px;
+                font-weight: bold;
+                font-size: 20px;
+            }
+
+            body {
+                background-color: lightgoldenrodyellow;
+            }
+
+            ul {
+                display: grid;
+                grid-template-columns: 350px 350px 350px;
+                list-style: none;
+            }
+
+            li {
+                border-style: solid;
+                border-radius: 5px;
+                padding: 5px;
+                margin: 5px;
+                background-color: lightskyblue;
+            }
+        </style>
+        <script>
+            loadAddressInfo = function(url,weatherurl,callback){
+                let request = new XMLHttpRequest();
+                request.onreadystatechange = function(){
+                    if(request.readyState == 4 && request.status == 200){
+                        callback(weatherurl,request.responseText);
+                    }
+                }
+                const address = document.getElementById('address').value;
+                request.open('GET',url+address+'&api_key=d1389198d165c9181c3878685910003d5186c11');
+                request.send();
+                console.log(address);
+            }
+
+            loadWeatherData = function(url,addressResponse){
+                const jsonFormat    = JSON.parse(addressResponse);
+                const locationInfo  = jsonFormat['results'][0].location;
+                const latitude      = locationInfo.lat;
+                const longitude     = locationInfo.lng;
+                let request = new XMLHttpRequest();
+                request.onreadystatechange = function(){
+                    if(request.readyState == 4 && request.status == 200){
+                        loadForeCast(request.responseText);
+                        console.log(latitude);
+                        console.log(longitude);
+                    }
+                }
+                request.open('GET',url+latitude+','+longitude);
+                request.send();         
+            }
+
+            loadForeCast = function(weatherResponse){
+                const jsonFormat    = JSON.parse(weatherResponse);
+                let request = new XMLHttpRequest();
+                request.onreadystatechange = function(){
+                    if(request.readyState == 4 && request.status == 200){
+                        const jsonFormat = JSON.parse(request.responseText);
+                        displayForeCast(jsonFormat.properties.periods);
+                        console.log(jsonFormat.properties.periods);
+                    }
+                }
+                const foreCastUrl = jsonFormat['properties'].forecast;
+                console.log(foreCastUrl)
+                request.open('GET',foreCastUrl);
+                request.send();                 
+            }
+
+            function displayForeCast(foreCastData){
+                document.getElementById('foreCastDiv').innerHTML=foreCastData;
+                var app = document.getElementById('foreCastDiv');
+                app.innerHTML = '<ul>' + foreCastData.map(function(data) {return '<li>' + data.name + '<br>' + data.detailedForecast + '<br>'
+                 + data.temperature + data.temperatureUnit + '<br>' + data.windDirection + ' ' + data.windSpeed + '</li>';}).join('') + '</ul>';
+
+                console.log('foreCastData', foreCastData);
+            }
+            
+        </script>
+    </head>
+    <body>
+        <div class="container text-xl-center">Get Your 5-day Forecast</div>
+        <div class="container text-center">
+            <label for="address">Enter the address</label>
+            <input type="text" id="address" placeholder="Street, City, Zip Code">
+            <button onclick="loadAddressInfo('https://api.geocod.io/v1.6/geocode?q=','https://api.weather.gov/points/', loadWeatherData)">
+                Load Weather Forecast
+            </button>
+        </div>   
+        <div class="container">
+            <div id="foreCastDiv"></div>
+        </div>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    </body>
+</html>
